@@ -22,8 +22,8 @@ module Stalker
   end
 
   def job(j, &block)
-    @@handlers ||= {}
-    @@handlers[j] = block
+    @@stalk_handlers ||= {}
+    @@stalk_handlers[j] = block
   end
 
   def before(&block)
@@ -39,13 +39,13 @@ module Stalker
   class NoSuchJob < RuntimeError; end
 
   def prep(jobs=nil)
-    raise NoJobsDefined unless defined?(@@handlers)
+    raise NoJobsDefined unless defined?(@@stalk_handlers)
     @@error_handler = nil unless defined?(@@error_handler)
 
     jobs ||= all_jobs
 
     jobs.each do |job|
-      raise(NoSuchJob, job) unless @@handlers[job]
+      raise(NoSuchJob, job) unless @@stalk_handlers[job]
     end
 
     log "Working #{jobs.size} jobs: [ #{jobs.join(' ')} ]"
@@ -70,7 +70,7 @@ module Stalker
     job = beanstalk.reserve
     name, args = JSON.parse job.body
     log_job_begin(name, args)
-    handler = @@handlers[name]
+    handler = @@stalk_handlers[name]
     raise(NoSuchJob, name) unless handler
 
     begin
@@ -173,7 +173,7 @@ module Stalker
   end
 
   def all_jobs
-    @@handlers.keys
+    @@stalk_handlers.keys
   end
 
   def error_handler
@@ -181,7 +181,7 @@ module Stalker
   end
 
   def clear!
-    @@handlers = nil
+    @@stalk_handlers = nil
     @@before_handlers = nil
     @@error_handler = nil
   end
